@@ -40,5 +40,21 @@ main = do
         else getContents
 
     let inputLines = splitOn "\n" input
+
+    -- parsuj vstup a napln strukturu Grammar
     let nonterminals = splitOn "," $ head inputLines
-    print inputLines
+    let terminals = splitOn "," $ inputLines !! 1
+    let startSymbol = inputLines !! 2
+    let productionRulesLinesAll = tail $ tail $ tail inputLines
+
+    let productionRulesLines = if last productionRulesLinesAll == ""
+        then  init productionRulesLinesAll
+        else productionRulesLinesAll
+
+    let productionRules = map (splitOn "->") productionRulesLines
+    let productionRulesTuples = map (\a -> (head a, a !! 1)) productionRules
+
+    let rlg = Grammar nonterminals terminals productionRulesTuples startSymbol
+
+    -- TODO: validuj rlg Grammar strukturu
+    print rlg
