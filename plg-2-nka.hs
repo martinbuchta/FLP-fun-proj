@@ -67,6 +67,9 @@ main = do
     let terminalsChards = validateTerminalsChars terminals
     Control.Monad.when (not terminalsLength || not terminalsChards) $ error "Terminály nejsou validni"
 
+    -- validuj pocatecni neterminal
+    Control.Monad.when (startSymbol `notElem` nonterminals) $ error "Počáteční symbol musí náležet množině neterminálů!"
+
 
     print rlg
 
