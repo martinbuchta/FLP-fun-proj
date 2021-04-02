@@ -3,6 +3,7 @@ import System.Environment
 import Data.List.Split ( splitOn )
 import qualified Control.Monad
 import Control.Monad (unless)
+import Data.List (nub)
 
 -- struktura reprezentujici gramatiku
 data Grammar = Grammar {
@@ -42,7 +43,7 @@ main = do
     let inputLines = splitOn "\n" input
 
     -- parsuj vstup a napln strukturu Grammar
-    let nonterminals = splitOn "," $ head inputLines
+    let nonterminals = nub $ splitOn "," $ head inputLines
     let terminals = splitOn "," $ inputLines !! 1
     let startSymbol = inputLines !! 2
     let productionRulesLinesAll = tail $ tail $ tail inputLines
@@ -56,5 +57,16 @@ main = do
 
     let rlg = Grammar nonterminals terminals productionRulesTuples startSymbol
 
-    -- TODO: validuj rlg Grammar strukturu
+    -- validuj neterminaly
+    let nonterminalsCharsValidated = validateNonterminalsChars nonterminals
+    let nonterminalsLength = validateNonterminalsLength nonterminals
+
     print rlg
+
+validateNonterminalsChars :: [String] -> Bool
+validateNonterminalsChars[] = True
+validateNonterminalsChars(x:xs) = if head x < 'A' || head x > 'Z' then error ("Neterminály musí být [A-Z], toto nalezeno: " ++ x) else validateNonterminalsChars xs
+
+validateNonterminalsLength :: [String] -> Bool
+validateNonterminalsLength[] = True
+validateNonterminalsLength(x:xs) = if length x > 1 then error ("Neterminály musí být dlouhé 1 znak, toto nalezeno: " ++ x) else validateNonterminalsLength xs
