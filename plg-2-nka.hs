@@ -71,6 +71,10 @@ main = do
     -- validuj pocatecni neterminal
     Control.Monad.when (startSymbol `notElem` nonterminals) $ error "Počáteční symbol musí náležet množině neterminálů!"
 
+    -- over, ze neexistuje jednoduche pravidlo
+    let noSimpleRule = validateNoSimpleRule productionRulesTuples nonterminals
+    unless noSimpleRule $ error "Nesmí existovat jednoduché pravidlo!"
+
     -- validuj pravidla gramatiky
     let rulesNeterminals = validateRulesNonterminals productionRulesTuples nonterminals
     let rulesSnd = validateRulesSnd productionRulesTuples nonterminals terminals
@@ -109,5 +113,11 @@ validateRuselSndNonterminals [] _ _ = True
 validateRuselSndNonterminals (x:xs) nonterminals terminals
     | length (snd x) == 1 = validateRuselSndNonterminals xs nonterminals terminals
     | otherwise = not (any (\a -> [a] `notElem` terminals) (init (snd x))) && validateRuselSndNonterminals xs nonterminals terminals
+
+validateNoSimpleRule :: [(String, String)] -> [String] -> Bool
+validateNoSimpleRule [] _ = True
+validateNoSimpleRule (x:xs) nonterminals
+    | snd x `elem` nonterminals = False
+    | otherwise = validateNoSimpleRule xs nonterminals
 
 debug = flip trace
