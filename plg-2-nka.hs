@@ -4,6 +4,7 @@ import Data.List.Split ( splitOn )
 import qualified Control.Monad
 import Control.Monad (unless)
 import Data.List (nub)
+import Debug.Trace (trace)
 
 -- struktura reprezentujici gramatiku
 data Grammar = Grammar {
@@ -70,6 +71,12 @@ main = do
     -- validuj pocatecni neterminal
     Control.Monad.when (startSymbol `notElem` nonterminals) $ error "Počáteční symbol musí náležet množině neterminálů!"
 
+    -- validuj pravidla gramatiky
+    let rulesNeterminals = validateRulesNonterminals productionRulesTuples nonterminals
+    let rulesSnd = validateRulesSnd productionRulesTuples nonterminals terminals
+    let rulesSndTerminals = validateRuselSndNonterminals productionRulesTuples nonterminals terminals
+    Control.Monad.when (not rulesNeterminals || not rulesSnd || not rulesSndTerminals) $ error "Pravidla nejsou validni"
+
 
     print rlg
 
@@ -84,3 +91,23 @@ validateNonterminalsLength(x:xs) = if length x > 1 then error ("Neterminály i t
 validateTerminalsChars :: [String] -> Bool
 validateTerminalsChars[] = True
 validateTerminalsChars(x:xs) = if head x < 'a' || head x > 'z' then error("Terminály musí být [a-z], toto nalezeno: " ++ x) else validateTerminalsChars xs
+
+-- params: rules, nonterminals
+validateRulesNonterminals :: [(String, String)] -> [String] -> Bool
+validateRulesNonterminals[] _ = True
+validateRulesNonterminals(x:xs) nonterminals = if fst x `notElem` nonterminals then error("Neterminál z pravidla " ++ fst x ++ "->" ++ snd x ++ " neexistuje!") else validateRulesNonterminals xs nonterminals
+
+validateRulesSnd :: [(String, String)] -> [String] -> [String] -> Bool
+validateRulesSnd [] _ _ = True
+validateRulesSnd (x:xs) nonterminals terminals
+    | length (snd x) == 1 = if snd x /= "#" && snd x `notElem` terminals then error ("Neplatná pravá strana pravidla " ++ snd x) else validateRulesSnd xs nonterminals terminals
+    | null (snd x) = False
+    | otherwise = if [last (snd x)] `notElem` nonterminals then error ("Neplatný neterminál na pravé straně pravidla " ++ snd x) else validateRulesSnd xs nonterminals terminals
+
+validateRuselSndNonterminals :: [(String, String)] -> [String] -> [String] -> Bool
+validateRuselSndNonterminals [] _ _ = True
+validateRuselSndNonterminals (x:xs) nonterminals terminals
+    | length (snd x) == 1 = validateRuselSndNonterminals xs nonterminals terminals
+    | otherwise = not (any (\a -> [a] `notElem` terminals) (init (snd x))) && validateRuselSndNonterminals xs nonterminals terminals
+
+debug = flip trace
