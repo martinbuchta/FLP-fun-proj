@@ -44,7 +44,7 @@ main = do
 
     -- parsuj vstup a napln strukturu Grammar
     let nonterminals = nub $ splitOn "," $ head inputLines
-    let terminals = splitOn "," $ inputLines !! 1
+    let terminals = nub $ splitOn "," $ inputLines !! 1
     let startSymbol = inputLines !! 2
     let productionRulesLinesAll = tail $ tail $ tail inputLines
 
@@ -60,6 +60,13 @@ main = do
     -- validuj neterminaly
     let nonterminalsCharsValidated = validateNonterminalsChars nonterminals
     let nonterminalsLength = validateNonterminalsLength nonterminals
+    Control.Monad.when (not nonterminalsCharsValidated || not nonterminalsLength) $ error "Neterminály nejsou validni"
+
+    -- validuj terminaly
+    let terminalsLength = validateNonterminalsLength terminals
+    let terminalsChards = validateTerminalsChars terminals
+    Control.Monad.when (not terminalsLength || not terminalsChards) $ error "Terminály nejsou validni"
+
 
     print rlg
 
@@ -69,4 +76,8 @@ validateNonterminalsChars(x:xs) = if head x < 'A' || head x > 'Z' then error ("N
 
 validateNonterminalsLength :: [String] -> Bool
 validateNonterminalsLength[] = True
-validateNonterminalsLength(x:xs) = if length x > 1 then error ("Neterminály musí být dlouhé 1 znak, toto nalezeno: " ++ x) else validateNonterminalsLength xs
+validateNonterminalsLength(x:xs) = if length x > 1 then error ("Neterminály i terminály musí být dlouhé 1 znak, toto nalezeno: " ++ x) else validateNonterminalsLength xs
+
+validateTerminalsChars :: [String] -> Bool
+validateTerminalsChars[] = True
+validateTerminalsChars(x:xs) = if head x < 'a' || head x > 'z' then error("Terminály musí být [a-z], toto nalezeno: " ++ x) else validateTerminalsChars xs
