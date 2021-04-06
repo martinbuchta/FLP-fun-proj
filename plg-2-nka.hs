@@ -109,7 +109,7 @@ validateRulesSnd [] _ _ = True
 validateRulesSnd (x:xs) nonterminals terminals
     | length (snd x) == 1 = if snd x /= "#" && snd x `notElem` terminals then error ("Neplatná pravá strana pravidla " ++ snd x) else validateRulesSnd xs nonterminals terminals
     | null (snd x) = False
-    | otherwise = if [last (snd x)] `notElem` nonterminals then error ("Neplatný neterminál na pravé straně pravidla " ++ snd x) else validateRulesSnd xs nonterminals terminals
+    | otherwise = validateRulesSnd xs nonterminals terminals
 
 validateRuselSndNonterminals :: [(String, String)] -> [String] -> [String] -> Bool
 validateRuselSndNonterminals [] _ _ = True
@@ -134,7 +134,7 @@ printGrammar grammar = do
 
 --                n -> orig n -> neterminal -> terminaly -> posledni neterminal
 enumerateRules :: Int -> Int -> String -> String -> String -> [(String, String)]
-enumerateRules n origN nonterminal terminals final 
+enumerateRules n origN nonterminal terminals final
     | length terminals > 1 = (nonterminal ++ (if n /= origN then show n else ""), [head terminals] ++ (nonterminal ++ show (n+1))) : enumerateRules (n+1) n nonterminal (tail terminals) final
     | otherwise  = [(nonterminal ++ show n, terminals ++ final)]
 
@@ -152,15 +152,33 @@ getNextIndex rules = sum l - 1
 
 splitRuleRecursion :: [(String, String)] -> [(String, String)]
 splitRuleRecursion [] = []
-splitRuleRecursion (rule:rules) = splitRuleRecursion rules ++ splitRule (getNextIndex (map (\a -> splitRule 0 a) rules)) rule
+splitRuleRecursion (rule:rules) = splitRuleRecursion rules ++ splitRule (getNextIndex (map (splitRule 0) rules)) rule
+
+hasNonterminal :: String -> Bool
+hasNonterminal "" = False
+hasNonterminal (x:xs)
+    | x `elem` ['A' .. 'Z'] = True
+    | otherwise = hasNonterminal xs
+
+splitTerminalsRule :: Int -> Int-> (String, String) -> [(String, String)]
+splitTerminalsRule index _ (nonterm, "") = [(nonterm ++ show index, "#")]
+splitTerminalsRule index origIndex rule
+    | index == origIndex = (fst rule, [head (snd rule)] ++ (fst rule ++ show (index+1))) : splitTerminalsRule (index+1) index (fst rule, tail $ snd rule)
+    | otherwise = (fst rule ++ show index, [head (snd rule)] ++ (fst rule ++ show (index+1))) : splitTerminalsRule (index+1) index (fst rule, tail $ snd rule)
+
+splitTerminals :: Int -> [(String, String)] -> [(String, String)]
+splitTerminals _ [] = []
+splitTerminals index (rule:rules) = splitTerminals index rules ++ splitTerminalsRule i i rule
+    where i = index + getNextIndex (map (splitTerminalsRule 0 0) rules)
 
 rightLinearGrammarToRightRegularTransoform :: Grammar -> Grammar
 rightLinearGrammarToRightRegularTransoform grammar = Grammar r_nonterminals r_terminals r_productionRules r_startSymbol
     where
         r_nonterminals = [] -- nonterminals grammar
         r_terminals = [] -- terminals grammar
-        r_productionRules = ad1 ++ ad2
+        r_productionRules = nub (ad1 ++ ad2 ++ ad3)
         r_startSymbol = [] -- startSymbol grammar
-        ad1 = filter (\rule -> length (snd rule) <= 2) (productionRules grammar) -- A → aB a A → # kde A, B ∈ N, a ∈ Σ
+        ad1 = filter (\rule -> length (snd rule) <= 2 && (hasNonterminal (snd rule) || snd rule == "#")) (productionRules grammar) -- A → aB a A → # kde A, B ∈ N, a ∈ Σ
         ad2 = splitRuleRecursion $ reverse (filter (\rule -> length (snd rule) > 2 && last (snd rule) `elem` ['A'..'Z']) $ productionRules grammar) -- A → a1a2...anB; A, B ∈ N, ai ∈ Σ
+        ad3 = splitTerminals (getNextIndex [ad2]) $ reverse (filter (\rule -> length (snd rule) >= 2 && not (hasNonterminal (snd rule))) $ productionRules grammar) -- A → a1...an, ai ∈ Σ, n ≥ 1 
 
