@@ -174,10 +174,10 @@ splitTerminals index (rule:rules) = splitTerminals index rules ++ splitTerminals
 rightLinearGrammarToRightRegularTransoform :: Grammar -> Grammar
 rightLinearGrammarToRightRegularTransoform grammar = Grammar r_nonterminals r_terminals r_productionRules r_startSymbol
     where
-        r_nonterminals = [] -- nonterminals grammar
-        r_terminals = [] -- terminals grammar
         r_productionRules = nub (ad1 ++ ad2 ++ ad3)
-        r_startSymbol = [] -- startSymbol grammar
+        r_terminals = terminals grammar -- terminals grammar
+        r_nonterminals = nub (map fst r_productionRules) -- nonterminals grammar
+        r_startSymbol = startSymbol grammar -- startSymbol grammar
         ad1 = filter (\rule -> length (snd rule) <= 2 && (hasNonterminal (snd rule) || snd rule == "#")) (productionRules grammar) -- A → aB a A → # kde A, B ∈ N, a ∈ Σ
         ad2 = splitRuleRecursion $ reverse (filter (\rule -> length (snd rule) > 2 && last (snd rule) `elem` ['A'..'Z']) $ productionRules grammar) -- A → a1a2...anB; A, B ∈ N, ai ∈ Σ
         ad3 = splitTerminals (getNextIndex [ad2]) $ reverse (filter (\rule -> length (snd rule) >= 2 && not (hasNonterminal (snd rule))) $ productionRules grammar) -- A → a1...an, ai ∈ Σ, n ≥ 1 
