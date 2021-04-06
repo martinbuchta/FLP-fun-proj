@@ -3,7 +3,7 @@ import System.Environment
 import Data.List.Split ( splitOn )
 import qualified Control.Monad
 import Control.Monad (unless)
-import Data.List (nub)
+import Data.List (nub, intercalate)
 import Debug.Trace (trace)
 
 -- struktura reprezentujici gramatiku
@@ -81,8 +81,8 @@ main = do
     let rulesSndTerminals = validateRuselSndNonterminals productionRulesTuples nonterminals terminals
     Control.Monad.when (not rulesNeterminals || not rulesSnd || not rulesSndTerminals) $ error "Pravidla nejsou validni"
 
-
-    print rlg
+    -- -i flag functionality
+    Control.Monad.when ("-i" `elem` flags) $ printGrammar rlg
 
 validateNonterminalsChars :: [String] -> Bool
 validateNonterminalsChars[] = True
@@ -121,3 +121,10 @@ validateNoSimpleRule (x:xs) nonterminals
     | otherwise = validateNoSimpleRule xs nonterminals
 
 debug = flip trace
+
+
+printGrammar grammar = do
+    putStrLn (intercalate "," (nonterminals grammar))
+    putStrLn (intercalate "," (terminals grammar))
+    putStrLn (startSymbol grammar)
+    mapM_ (\rule -> putStrLn (fst rule ++ "->" ++ snd rule) ) (productionRules grammar)
