@@ -87,6 +87,9 @@ main = do
     -- -1 functioncality
     Control.Monad.when ("-1" `elem` flags) $ printGrammar $ rightLinearGrammarToRightRegularTransoform rlg
 
+    -- -2 functionality
+    Control.Monad.when ("-2" `elem` flags) $ printAutomata $ getAutomata $ rightLinearGrammarToRightRegularTransoform rlg
+
 validateNonterminalsChars :: [String] -> Bool
 validateNonterminalsChars[] = True
 validateNonterminalsChars(x:xs) = if head x < 'A' || head x > 'Z' then error ("Neterminály musí být [A-Z], toto nalezeno: " ++ x) else validateNonterminalsChars xs
@@ -126,11 +129,20 @@ validateNoSimpleRule (x:xs) nonterminals
 debug = flip trace
 
 
+printGrammar :: Grammar -> IO ()
 printGrammar grammar = do
     putStrLn (intercalate "," (nonterminals grammar))
     putStrLn (intercalate "," (terminals grammar))
     putStrLn (startSymbol grammar)
     mapM_ (\rule -> putStrLn (fst rule ++ "->" ++ snd rule) ) (productionRules grammar)
+
+printAutomata :: Machine -> IO ()
+printAutomata automata = do
+    putStrLn (intercalate "," (states automata))
+    putStrLn (intercalate "," (alphabet automata))
+    putStrLn $ initialState automata
+    putStrLn (intercalate "," $ finalStates automata)
+    mapM_ (\a -> mapM_ (\b -> putStrLn (fst (fst a) ++ "," ++ snd (fst a) ++ "," ++ b)) (snd a)) (transitionFunction automata)
 
 --                n -> orig n -> neterminal -> terminaly -> posledni neterminal
 enumerateRules :: Int -> Int -> String -> String -> String -> [(String, String)]
@@ -181,4 +193,13 @@ rightLinearGrammarToRightRegularTransoform grammar = Grammar r_nonterminals r_te
         ad1 = filter (\rule -> length (snd rule) <= 2 && (hasNonterminal (snd rule) || snd rule == "#")) (productionRules grammar) -- A → aB a A → # kde A, B ∈ N, a ∈ Σ
         ad2 = splitRuleRecursion $ reverse (filter (\rule -> length (snd rule) > 2 && last (snd rule) `elem` ['A'..'Z']) $ productionRules grammar) -- A → a1a2...anB; A, B ∈ N, ai ∈ Σ
         ad3 = splitTerminals (getNextIndex [ad2]) $ reverse (filter (\rule -> length (snd rule) >= 2 && not (hasNonterminal (snd rule))) $ productionRules grammar) -- A → a1...an, ai ∈ Σ, n ≥ 1 
+
+getAutomata :: Grammar -> Machine
+getAutomata grammar = Machine r_aplhabet r_states r_initialState r_transitionFunction r_finalStates
+    where
+        r_aplhabet = terminals grammar
+        r_states = nonterminals grammar
+        r_initialState = startSymbol grammar
+        r_finalStates = map fst $ filter (\a -> snd a == "#") (productionRules grammar)
+        r_transitionFunction = map (\a -> ((fst a, [head $ snd a]), [tail $ snd a])) (filter (\a -> snd a /= "#") $ productionRules grammar)
 
