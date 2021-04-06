@@ -84,6 +84,9 @@ main = do
     -- -i flag functionality
     Control.Monad.when ("-i" `elem` flags) $ printGrammar rlg
 
+    -- -1 functioncality
+    Control.Monad.when ("-1" `elem` flags) $ printGrammar $ rightLinearGrammarToRightRegularTransoform rlg
+
 validateNonterminalsChars :: [String] -> Bool
 validateNonterminalsChars[] = True
 validateNonterminalsChars(x:xs) = if head x < 'A' || head x > 'Z' then error ("Neterminály musí být [A-Z], toto nalezeno: " ++ x) else validateNonterminalsChars xs
@@ -128,3 +131,36 @@ printGrammar grammar = do
     putStrLn (intercalate "," (terminals grammar))
     putStrLn (startSymbol grammar)
     mapM_ (\rule -> putStrLn (fst rule ++ "->" ++ snd rule) ) (productionRules grammar)
+
+--                n -> orig n -> neterminal -> terminaly -> posledni neterminal
+enumerateRules :: Int -> Int -> String -> String -> String -> [(String, String)]
+enumerateRules n origN nonterminal terminals final 
+    | length terminals > 1 = (nonterminal ++ (if n /= origN then show n else ""), [head terminals] ++ (nonterminal ++ show (n+1))) : enumerateRules (n+1) n nonterminal (tail terminals) final
+    | otherwise  = [(nonterminal ++ show n, terminals ++ final)]
+
+splitRule :: Int -> (String, String) -> [(String, String)]
+splitRule nextIndex rule = enumerateRules nextIndex nextIndex nonterminal terminals final
+    where
+        nonterminal = fst rule
+        terminals = init $ snd rule
+        final = [last $ snd rule]
+
+getNextIndex :: [[(String, String)]] -> Int
+getNextIndex [] = 0
+getNextIndex rules = sum l - 1
+    where l = map length rules
+
+splitRuleRecursion :: [(String, String)] -> [(String, String)]
+splitRuleRecursion [] = []
+splitRuleRecursion (rule:rules) = splitRuleRecursion rules ++ splitRule (getNextIndex (map (\a -> splitRule 0 a) rules)) rule
+
+rightLinearGrammarToRightRegularTransoform :: Grammar -> Grammar
+rightLinearGrammarToRightRegularTransoform grammar = Grammar r_nonterminals r_terminals r_productionRules r_startSymbol
+    where
+        r_nonterminals = [] -- nonterminals grammar
+        r_terminals = [] -- terminals grammar
+        r_productionRules = ad1 ++ ad2
+        r_startSymbol = [] -- startSymbol grammar
+        ad1 = filter (\rule -> length (snd rule) <= 2) (productionRules grammar) -- A → aB a A → # kde A, B ∈ N, a ∈ Σ
+        ad2 = splitRuleRecursion $ reverse (filter (\rule -> length (snd rule) > 2 && last (snd rule) `elem` ['A'..'Z']) $ productionRules grammar) -- A → a1a2...anB; A, B ∈ N, ai ∈ Σ
+
