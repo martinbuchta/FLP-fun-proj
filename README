@@ -1,0 +1,28 @@
+PLG2NKA
+=======
+
+Program načte pravou lineární gramatiku, převede ji na pravou regulární gramatiku
+a tu poté převede na nedeterministický konečný automat. (Vše podle opory z předmětu TIN.)
+
+Překlad
+-------
+
+Voláním `make` se vytvoří spustitelný soubor **plg-2-nka**.
+
+Parametry spuštění
+------------------
+
+ - **-i** Načte gramatiku do __vnitřní reprezentace__ gramatiky. Proběhne validace. Poté se gramatika vytiskne na výstup.
+ - **-1** Načte gramatiku, vytvoří z ní __pravou regulární__ gramatiku a vytiskne ji.
+ - **-2** Načte gramatiku, převede ji na pravou regulární gramatiku, tu poté převede na __nedeterministický konečný automat__ a vytiskne jeho reprezentaci.
+
+Příklad spuštění
+----------------
+
+`./plg-2-nka -2 < tests/1.in` spustí program, načte pravou lineární gramatiku ze souboru *tests/1.in* a vytiskne reprezentaci odpovídajícího nedeterministického konečného automatu.
+
+Testování
+---------
+
+Program byl otestován na několika gramatikách. Program se zdá být funkční. Testovací gramatiky jsou dostupné v adresáři *tests*. 
+
