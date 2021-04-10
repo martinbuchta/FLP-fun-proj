@@ -44,6 +44,7 @@ main = do
     let inputLines = splitOn "\n" input
 
     -- parsuj vstup a napln strukturu Grammar
+    Control.Monad.when (length inputLines < 4) $ error "Špatný vstup"
     let nonterminals = nub $ splitOn "," $ head inputLines
     let terminals = nub $ splitOn "," $ inputLines !! 1
     let startSymbol = inputLines !! 2
@@ -188,11 +189,11 @@ rightLinearGrammarToRightRegularTransoform grammar = Grammar r_nonterminals r_te
     where
         r_productionRules = nub (ad1 ++ ad2 ++ ad3)
         r_terminals = terminals grammar -- terminals grammar
-        r_nonterminals = nub (map fst r_productionRules) -- nonterminals grammar
+        r_nonterminals = nub (startSymbol grammar : map fst r_productionRules) -- nonterminals grammar
         r_startSymbol = startSymbol grammar -- startSymbol grammar
         ad1 = filter (\rule -> length (snd rule) <= 2 && (hasNonterminal (snd rule) || snd rule == "#")) (productionRules grammar) -- A → aB a A → # kde A, B ∈ N, a ∈ Σ
         ad2 = splitRuleRecursion $ reverse (filter (\rule -> length (snd rule) > 2 && last (snd rule) `elem` ['A'..'Z']) $ productionRules grammar) -- A → a1a2...anB; A, B ∈ N, ai ∈ Σ
-        ad3 = splitTerminals (getNextIndex [ad2]) $ reverse (filter (\rule -> length (snd rule) >= 2 && not (hasNonterminal (snd rule))) $ productionRules grammar) -- A → a1...an, ai ∈ Σ, n ≥ 1 
+        ad3 = splitTerminals (getNextIndex [ad2]) $ reverse (filter (\rule -> not (null (snd rule)) && not (hasNonterminal (snd rule)) && (snd rule /= "#")) $ productionRules grammar) -- A → a1...an, ai ∈ Σ, n ≥ 1 
 
 getAutomata :: Grammar -> Machine
 getAutomata grammar = Machine r_aplhabet r_states r_initialState r_transitionFunction r_finalStates
