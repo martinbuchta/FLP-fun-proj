@@ -1,3 +1,7 @@
+-- FLP projekt plg2nka
+-- xbucht28, Martin Buchta
+-- 2021
+
 import System.IO
 import System.Environment
 import Data.List.Split ( splitOn )
@@ -31,10 +35,12 @@ main = do
     let flags = filter (\a -> a == "-i" || a == "-1" || a == "-2") args
 
     -- kontrola neznamych argumentu
-    unless (all (\a -> a == "-i" || a == "-1" || a == "-2" || a == inputFileName) args) $ error "Nektery z argumentu neznam"
+    unless (all (\a -> a == "-i" || a == "-1" || a == "-2" || a == inputFileName) args)
+        $ error "Nektery z argumentu neznam"
 
     -- kontrola, ze je aspon jeden argument zadany
-    Control.Monad.when (null flags) $ error "Prosím, dej mi alespoň jeden přepínač z množiny {\"-i\", \"-1\", \"-2\"}."
+    Control.Monad.when (null flags) 
+        $ error "Prosím, dej mi alespoň jeden přepínač z množiny {\"-i\", \"-1\", \"-2\"}."
 
     -- precti vstup z stdin nebo ze souboru
     input <- if inputFileName /= "-i" && inputFileName /= "-1" && inputFileName /= "-2"
@@ -62,15 +68,18 @@ main = do
     -- validuj neterminaly
     let nonterminalsCharsValidated = validateNonterminalsChars nonterminals
     let nonterminalsLength = validateNonterminalsLength nonterminals
-    Control.Monad.when (not nonterminalsCharsValidated || not nonterminalsLength) $ error "Neterminály nejsou validni"
+    Control.Monad.when (not nonterminalsCharsValidated || not nonterminalsLength) 
+        $ error "Neterminály nejsou validni"
 
     -- validuj terminaly
     let terminalsLength = validateNonterminalsLength terminals
     let terminalsChards = validateTerminalsChars terminals
-    Control.Monad.when (not terminalsLength || not terminalsChards) $ error "Terminály nejsou validni"
+    Control.Monad.when (not terminalsLength || not terminalsChards) 
+        $ error "Terminály nejsou validni"
 
     -- validuj pocatecni neterminal
-    Control.Monad.when (startSymbol `notElem` nonterminals) $ error "Počáteční symbol musí náležet množině neterminálů!"
+    Control.Monad.when (startSymbol `notElem` nonterminals) 
+        $ error "Počáteční symbol musí náležet množině neterminálů!"
 
     -- over, ze neexistuje jednoduche pravidlo
     let noSimpleRule = validateNoSimpleRule productionRulesTuples nonterminals
@@ -79,39 +88,53 @@ main = do
     -- validuj pravidla gramatiky
     let rulesNeterminals = validateRulesNonterminals productionRulesTuples nonterminals
     let rulesSnd = validateRulesSnd productionRulesTuples nonterminals terminals
-    let rulesSndTerminals = validateRuselSndNonterminals productionRulesTuples nonterminals terminals
-    Control.Monad.when (not rulesNeterminals || not rulesSnd || not rulesSndTerminals) $ error "Pravidla nejsou validni"
+    let rulesSndTerminals = validateRuselSndNonterminals 
+            productionRulesTuples nonterminals terminals
+    Control.Monad.when (not rulesNeterminals || not rulesSnd || not rulesSndTerminals) 
+        $ error "Pravidla nejsou validni"
 
     -- -i flag functionality
     Control.Monad.when ("-i" `elem` flags) $ printGrammar rlg
 
     -- -1 functioncality
-    Control.Monad.when ("-1" `elem` flags) $ printGrammar $ rightLinearGrammarToRightRegularTransoform rlg
+    Control.Monad.when ("-1" `elem` flags) $ printGrammar 
+        $ rightLinearGrammarToRightRegularTransoform rlg
 
     -- -2 functionality
-    Control.Monad.when ("-2" `elem` flags) $ printAutomata $ getAutomata $ rightLinearGrammarToRightRegularTransoform rlg
+    Control.Monad.when ("-2" `elem` flags) $ printAutomata $ getAutomata
+        $ rightLinearGrammarToRightRegularTransoform rlg
 
 validateNonterminalsChars :: [String] -> Bool
 validateNonterminalsChars[] = True
-validateNonterminalsChars(x:xs) = if head x < 'A' || head x > 'Z' then error ("Neterminály musí být [A-Z], toto nalezeno: " ++ x) else validateNonterminalsChars xs
+validateNonterminalsChars(x:xs) = if head x < 'A' || head x > 'Z' 
+    then error ("Neterminály musí být [A-Z], toto nalezeno: " ++ x) 
+    else validateNonterminalsChars xs
 
 validateNonterminalsLength :: [String] -> Bool
 validateNonterminalsLength[] = True
-validateNonterminalsLength(x:xs) = if length x > 1 then error ("Neterminály i terminály musí být dlouhé 1 znak, toto nalezeno: " ++ x) else validateNonterminalsLength xs
+validateNonterminalsLength(x:xs) = if length x > 1 
+    then error ("Neterminály i terminály musí být dlouhé 1 znak, toto nalezeno: " ++ x) 
+    else validateNonterminalsLength xs
 
 validateTerminalsChars :: [String] -> Bool
 validateTerminalsChars[] = True
-validateTerminalsChars(x:xs) = if head x < 'a' || head x > 'z' then error("Terminály musí být [a-z], toto nalezeno: " ++ x) else validateTerminalsChars xs
+validateTerminalsChars(x:xs) = if head x < 'a' || head x > 'z' 
+    then error("Terminály musí být [a-z], toto nalezeno: " ++ x) 
+    else validateTerminalsChars xs
 
 -- params: rules, nonterminals
 validateRulesNonterminals :: [(String, String)] -> [String] -> Bool
 validateRulesNonterminals[] _ = True
-validateRulesNonterminals(x:xs) nonterminals = if fst x `notElem` nonterminals then error("Neterminál z pravidla " ++ fst x ++ "->" ++ snd x ++ " neexistuje!") else validateRulesNonterminals xs nonterminals
+validateRulesNonterminals(x:xs) nonterminals = if fst x `notElem` nonterminals 
+    then error("Neterminál z pravidla " ++ fst x ++ "->" ++ snd x ++ " neexistuje!") 
+    else validateRulesNonterminals xs nonterminals
 
 validateRulesSnd :: [(String, String)] -> [String] -> [String] -> Bool
 validateRulesSnd [] _ _ = True
 validateRulesSnd (x:xs) nonterminals terminals
-    | length (snd x) == 1 = if snd x /= "#" && snd x `notElem` terminals then error ("Neplatná pravá strana pravidla " ++ snd x) else validateRulesSnd xs nonterminals terminals
+    | length (snd x) == 1 = if snd x /= "#" && snd x `notElem` terminals 
+        then error ("Neplatná pravá strana pravidla " ++ snd x) 
+        else validateRulesSnd xs nonterminals terminals
     | null (snd x) = False
     | otherwise = validateRulesSnd xs nonterminals terminals
 
@@ -119,7 +142,8 @@ validateRuselSndNonterminals :: [(String, String)] -> [String] -> [String] -> Bo
 validateRuselSndNonterminals [] _ _ = True
 validateRuselSndNonterminals (x:xs) nonterminals terminals
     | length (snd x) == 1 = validateRuselSndNonterminals xs nonterminals terminals
-    | otherwise = not (any (\a -> [a] `notElem` terminals) (init (snd x))) && validateRuselSndNonterminals xs nonterminals terminals
+    | otherwise = not (any (\a -> [a] `notElem` terminals) (init (snd x))) 
+            && validateRuselSndNonterminals xs nonterminals terminals
 
 validateNoSimpleRule :: [(String, String)] -> [String] -> Bool
 validateNoSimpleRule [] _ = True
@@ -143,12 +167,15 @@ printAutomata automata = do
     putStrLn (intercalate "," (alphabet automata))
     putStrLn $ initialState automata
     putStrLn (intercalate "," $ finalStates automata)
-    mapM_ (\a -> mapM_ (\b -> putStrLn (fst (fst a) ++ "," ++ snd (fst a) ++ "," ++ b)) (snd a)) (transitionFunction automata)
+    mapM_ (\a -> mapM_ (\b -> putStrLn (fst (fst a) ++ "," ++ snd (fst a) ++ "," ++ b)) (snd a))
+        (transitionFunction automata)
 
 --                n -> orig n -> neterminal -> terminaly -> posledni neterminal
 enumerateRules :: Int -> Int -> String -> String -> String -> [(String, String)]
 enumerateRules n origN nonterminal terminals final
-    | length terminals > 1 = (nonterminal ++ (if n /= origN then show n else ""), [head terminals] ++ (nonterminal ++ show (n+1))) : enumerateRules (n+1) n nonterminal (tail terminals) final
+    | length terminals > 1 = (nonterminal ++ (if n /= origN then show n else ""),
+        [head terminals] ++ (nonterminal ++ show (n+1)))
+        : enumerateRules (n+1) n nonterminal (tail terminals) final
     | otherwise  = [(nonterminal ++ show n, terminals ++ final)]
 
 splitRule :: Int -> (String, String) -> [(String, String)]
@@ -165,7 +192,8 @@ getNextIndex rules = sum l - 1
 
 splitRuleRecursion :: [(String, String)] -> [(String, String)]
 splitRuleRecursion [] = []
-splitRuleRecursion (rule:rules) = splitRuleRecursion rules ++ splitRule (getNextIndex (map (splitRule 0) rules)) rule
+splitRuleRecursion (rule:rules) = splitRuleRecursion rules ++ 
+    splitRule (getNextIndex (map (splitRule 0) rules)) rule
 
 hasNonterminal :: String -> Bool
 hasNonterminal "" = False
@@ -176,8 +204,12 @@ hasNonterminal (x:xs)
 splitTerminalsRule :: Int -> Int-> (String, String) -> [(String, String)]
 splitTerminalsRule index _ (nonterm, "") = [(nonterm ++ show index, "#")]
 splitTerminalsRule index origIndex rule
-    | index == origIndex = (fst rule, [head (snd rule)] ++ (fst rule ++ show (index+1))) : splitTerminalsRule (index+1) index (fst rule, tail $ snd rule)
-    | otherwise = (fst rule ++ show index, [head (snd rule)] ++ (fst rule ++ show (index+1))) : splitTerminalsRule (index+1) index (fst rule, tail $ snd rule)
+    | index == origIndex = (fst rule, [head (snd rule)] ++ 
+        (fst rule ++ show (index+1))) : splitTerminalsRule (index+1) 
+        index (fst rule, tail $ snd rule)
+    | otherwise = (fst rule ++ show index, [head (snd rule)] ++ 
+        (fst rule ++ show (index+1))) : splitTerminalsRule (index+1) 
+        index (fst rule, tail $ snd rule)
 
 splitTerminals :: Int -> [(String, String)] -> [(String, String)]
 splitTerminals _ [] = []
@@ -185,15 +217,21 @@ splitTerminals index (rule:rules) = splitTerminals index rules ++ splitTerminals
     where i = index + getNextIndex (map (splitTerminalsRule 0 0) rules)
 
 rightLinearGrammarToRightRegularTransoform :: Grammar -> Grammar
-rightLinearGrammarToRightRegularTransoform grammar = Grammar r_nonterminals r_terminals r_productionRules r_startSymbol
+rightLinearGrammarToRightRegularTransoform grammar = Grammar r_nonterminals 
+    r_terminals r_productionRules r_startSymbol
     where
         r_productionRules = nub (ad1 ++ ad2 ++ ad3)
         r_terminals = terminals grammar -- terminals grammar
-        r_nonterminals = nub (startSymbol grammar : map fst r_productionRules) -- nonterminals grammar
+        r_nonterminals = nub (startSymbol grammar : map fst r_productionRules) -- nonterminals
         r_startSymbol = startSymbol grammar -- startSymbol grammar
-        ad1 = filter (\rule -> length (snd rule) <= 2 && (hasNonterminal (snd rule) || snd rule == "#")) (productionRules grammar) -- A → aB a A → # kde A, B ∈ N, a ∈ Σ
-        ad2 = splitRuleRecursion $ reverse (filter (\rule -> length (snd rule) > 2 && last (snd rule) `elem` ['A'..'Z']) $ productionRules grammar) -- A → a1a2...anB; A, B ∈ N, ai ∈ Σ
-        ad3 = splitTerminals (getNextIndex [ad2]) $ reverse (filter (\rule -> not (null (snd rule)) && not (hasNonterminal (snd rule)) && (snd rule /= "#")) $ productionRules grammar) -- A → a1...an, ai ∈ Σ, n ≥ 1 
+        ad1 = filter (\rule -> length (snd rule) <= 2 && (hasNonterminal (snd rule) 
+            || snd rule == "#")) (productionRules grammar) -- A → aB a A → # kde A, B ∈ N, a ∈ Σ
+        ad2 = splitRuleRecursion $ reverse (filter (\rule -> length (snd rule) > 2 
+            && last (snd rule) `elem` ['A'..'Z']) 
+            $ productionRules grammar) -- A → a1a2...anB; A, B ∈ N, ai ∈ Σ
+        ad3 = splitTerminals (getNextIndex [ad2]) $ reverse (filter (\rule -> not (null (snd rule))
+            && not (hasNonterminal (snd rule)) && (snd rule /= "#")) 
+            $ productionRules grammar) -- A → a1...an, ai ∈ Σ, n ≥ 1 
 
 getAutomata :: Grammar -> Machine
 getAutomata grammar = Machine r_aplhabet r_states r_initialState r_transitionFunction r_finalStates
@@ -202,5 +240,6 @@ getAutomata grammar = Machine r_aplhabet r_states r_initialState r_transitionFun
         r_states = nonterminals grammar
         r_initialState = startSymbol grammar
         r_finalStates = map fst $ filter (\a -> snd a == "#") (productionRules grammar)
-        r_transitionFunction = map (\a -> ((fst a, [head $ snd a]), [tail $ snd a])) (filter (\a -> snd a /= "#") $ productionRules grammar)
+        r_transitionFunction = map (\a -> ((fst a, [head $ snd a]), [tail $ snd a])) 
+            (filter (\a -> snd a /= "#") $ productionRules grammar)
 
